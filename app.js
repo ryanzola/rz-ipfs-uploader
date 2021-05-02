@@ -16,31 +16,43 @@ app.get('/', (req, res) => {
 })
 
 app.post('/upload', (req, res) => {
+  // just form stuff
   const file = req.files.file;
   const fileName = req.body.fileName;
+
+  // construct the filePath
   const filePath = 'files/' + fileName;
 
+  // store the file in the files directory
   file.mv(filePath, async (err) => {
     if(err) {
       console.error('failed to download the file')
       return res.status(500).send(err)
     }
 
+    // capture the ipfs filehash
     const fileHash = await addFile(fileName, filePath);
+
+    // once complete, remove the file
     fs.unlink(filePath, (err) => {
       if(err) {
         console.error(err)
       }
     });
 
+    // render the upload page
     res.render('upload', { fileName, fileHash })
   })
 })
 
 const addFile = async (fileName, filePath) => {
+  // read the file
   const file = fs.readFileSync(filePath);
+
+  // add the file to ipfs
   const fileAdded = await ipfs.add({ path: fileName, content: file });
-  console.log(fileAdded)
+
+  // capture the file hash
   const fileHash = fileAdded.cid;
 
   return fileHash;
